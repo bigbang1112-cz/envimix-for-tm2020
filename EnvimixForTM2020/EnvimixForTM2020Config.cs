@@ -8,5 +8,6 @@ public class EnvimixForTM2020Config : Config
     public bool IncludeCarSport { get; set; } = true;
     public bool IncludeCarSnow { get; set; } = true;
     public bool IncludeCharacterPilot { get; set; } = false;
+    public ValidationMode ValidationMode { get; set; }
     public bool GenerateDefaultCarVariant { get; set; }
 }
