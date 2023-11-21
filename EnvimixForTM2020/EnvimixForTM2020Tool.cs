@@ -49,12 +49,14 @@ public class EnvimixForTM2020Tool : ITool, IHasOutput<IEnumerable<NodeFile<CGame
 
             if (!Config.GenerateDefaultCarVariant)
             {
-                if (map.Collection == "Stadium2020" && car == "CarSport") continue;
+                if (map.Collection == 26 && car == "CarSport") continue;
             }
 
-            map.PlayerModel = (car, "Vehicles", "");
+            map.PlayerModel = (car, 10003, "");
             map.MapUid = $"{Convert.ToBase64String(Encoding.ASCII.GetBytes(Guid.NewGuid().ToString()))[..10]}{defaultMapUid.Substring(9, 10)}ENVIMIX";
             map.MapName = string.Format(Config.MapNameFormat, defaultMapName, car);
+
+            map.CrackPassword();
 
             var pureFileName = $"{TextFormatter.Deformat(map.MapName)}.Map.Gbx";
             var validFileName = string.Join("_", pureFileName.Split(Path.GetInvalidFileNameChars()));
