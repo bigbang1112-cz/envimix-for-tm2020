@@ -12,7 +12,7 @@ public class EnvimixForTM2020Tool : ITool, IHasOutput<IEnumerable<NodeFile<CGame
 {
     private readonly CGameCtnChallenge map;
 
-    private static readonly string[] cars = new[] { "CarSport", "CarSnow", "CharacterPilot" };
+    private static readonly string[] cars = new[] { "CarSport", "CarSnow", "CarRally", "CharacterPilot" };
 
     public EnvimixForTM2020Config Config { get; set; } = new();
 
@@ -30,7 +30,7 @@ public class EnvimixForTM2020Tool : ITool, IHasOutput<IEnumerable<NodeFile<CGame
 
         var includes = new[]
         {
-            Config.IncludeCarSport, Config.IncludeCarSnow, Config.IncludeCharacterPilot
+            Config.IncludeCarSport, Config.IncludeCarSnow, Config.IncludeCarRally, Config.IncludeCharacterPilot
         };
 
         var prevPlayerModel = map.PlayerModel;
