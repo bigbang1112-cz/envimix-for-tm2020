@@ -136,33 +136,29 @@ public class EnvimixForTM2020Tool : ITool, IHasOutput<IEnumerable<NodeFile<CGame
 
     private void ChangeGates(string envimixEnvironment)
     {
-        foreach (var block in map.GetBlocks().Where(block => !block.Name.Contains("Gameplay")))
+        foreach (var block in map.GetBlocks().Where(block => block.Name.Contains("Gameplay")))
         {
             for (int i = 0; i < envs.Length; i++)
             {
                 var env = envs[i];
 
-                if (!block.Name.Contains($"Gameplay{env}"))
+                if (block.Name.Contains($"Gameplay{env}"))
                 {
-                    continue;
+                    block.Name = block.Name.Replace(env, envimixEnvironment);
                 }
-
-                block.Name = block.Name.Replace(env, envimixEnvironment);
             }
         }
 
-        foreach (var item in map.GetAnchoredObjects().Where(item => !item.ItemModel.Id.Contains("Gameplay")))
+        foreach (var item in map.GetAnchoredObjects().Where(item => item.ItemModel.Id.Contains("Gameplay")))
         {
             for (int i = 0; i < envs.Length; i++)
             {
                 var env = envs[i];
 
-                if (!item.ItemModel.Id.Contains($"Gameplay{env}"))
+                if (item.ItemModel.Id.Contains($"Gameplay{env}"))
                 {
-                    continue;
+                    item.ItemModel = item.ItemModel with { Id = item.ItemModel.Id.Replace(env, envimixEnvironment) };
                 }
-
-                item.ItemModel = item.ItemModel with { Id = item.ItemModel.Id.Replace(env, envimixEnvironment) };
             }
         }
     }
