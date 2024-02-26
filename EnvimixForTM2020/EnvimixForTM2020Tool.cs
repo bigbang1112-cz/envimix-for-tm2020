@@ -12,7 +12,8 @@ public class EnvimixForTM2020Tool : ITool, IHasOutput<IEnumerable<NodeFile<CGame
 {
     private readonly CGameCtnChallenge map;
 
-    private static readonly string[] cars = new[] { "CarSport", "CarSnow", "CharacterPilot" };
+    private static readonly string[] cars = new[] { "CarSport", "CarSnow", "CarRally", "CarDesert", "CharacterPilot" };
+    private static readonly string[] envs = new[] { "Stadium", "Snow", "Rally", "Desert" };
 
     public EnvimixForTM2020Config Config { get; set; } = new();
 
@@ -30,16 +31,38 @@ public class EnvimixForTM2020Tool : ITool, IHasOutput<IEnumerable<NodeFile<CGame
 
         var includes = new[]
         {
-            Config.IncludeCarSport, Config.IncludeCarSnow, Config.IncludeCharacterPilot
+            Config.IncludeCarSport, Config.IncludeCarSnow, Config.IncludeCarRally, Config.IncludeCarDesert, Config.IncludeCharacterPilot
         };
 
         var prevPlayerModel = map.PlayerModel;
+        var prevAuthorTime = map.TMObjective_AuthorTime;
+        var prevGoldTime = map.TMObjective_GoldTime;
+        var prevSilverTime = map.TMObjective_SilverTime;
+        var prevBronzeTime = map.TMObjective_BronzeTime;
+
+        var defaultCar = map.PlayerModel?.Id;
+        if (string.IsNullOrEmpty(defaultCar))
+        {
+            defaultCar = "CarSport";
+        }
+
         var defaultMapUid = map.MapUid;
         var defaultMapName = map.MapName;
+
+        var prevGateBlocks = map.GetBlocks()
+            .Select(x => x.Name)
+            .Where(IsTransformationGate)
+            .ToList();
+
+        var prevGateItems = map.GetAnchoredObjects()
+            .Select(x => x.ItemModel.Id)
+            .Where(IsTransformationGate)
+            .ToList();
 
         for (int i = 0; i < cars.Length; i++)
         {
             var car = cars[i];
+            var env = envs.Length > i ? envs[i] : null;
             var include = includes[i];
 
             if (!include)
@@ -47,14 +70,23 @@ public class EnvimixForTM2020Tool : ITool, IHasOutput<IEnumerable<NodeFile<CGame
                 continue;
             }
 
-            if (!Config.GenerateDefaultCarVariant)
+            if (!Config.GenerateDefaultCarVariant && car == defaultCar)
             {
-                if (map.Collection == 26 && car == "CarSport") continue;
+                continue;
             }
 
             map.PlayerModel = (car, 10003, "");
             map.MapUid = $"{Convert.ToBase64String(Encoding.ASCII.GetBytes(Guid.NewGuid().ToString()))[..10]}{defaultMapUid.Substring(9, 10)}ENVIMIX";
             map.MapName = string.Format(Config.MapNameFormat, defaultMapName, car);
+
+            if (env is null)
+            {
+                RestoreGates(prevGateBlocks, prevGateItems);
+            }
+            else
+            {
+                ChangeGates(env);
+            }
 
             switch (Config.ValidationMode)
             {
@@ -88,5 +120,63 @@ public class EnvimixForTM2020Tool : ITool, IHasOutput<IEnumerable<NodeFile<CGame
         // Return to previous to temporarily fix the mutability issue
         map.PlayerModel = prevPlayerModel;
         map.MapName = defaultMapName;
+
+        map.TMObjective_AuthorTime = prevAuthorTime;
+        map.TMObjective_GoldTime = prevGoldTime;
+        map.TMObjective_SilverTime = prevSilverTime;
+        map.TMObjective_BronzeTime = prevBronzeTime;
+
+        RestoreGates(prevGateBlocks, prevGateItems);
+    }
+
+    private static bool IsTransformationGate(string name)
+    {
+        return name.Contains("Gameplay") && envs.Any(env => name.Contains($"Gameplay{env}"));
+    }
+
+    private void ChangeGates(string envimixEnvironment)
+    {
+        foreach (var block in map.GetBlocks().Where(block => block.Name.Contains("Gameplay")))
+        {
+            for (int i = 0; i < envs.Length; i++)
+            {
+                var env = envs[i];
+
+                if (block.Name.Contains($"Gameplay{env}"))
+                {
+                    block.Name = block.Name.Replace(env, envimixEnvironment);
+                }
+            }
+        }
+
+        foreach (var item in map.GetAnchoredObjects().Where(item => item.ItemModel.Id.Contains("Gameplay")))
+        {
+            for (int i = 0; i < envs.Length; i++)
+            {
+                var env = envs[i];
+
+                if (item.ItemModel.Id.Contains($"Gameplay{env}"))
+                {
+                    item.ItemModel = item.ItemModel with { Id = item.ItemModel.Id.Replace(env, envimixEnvironment) };
+                }
+            }
+        }
+    }
+
+    private void RestoreGates(IList<string> prevGateBlocks, IList<string> prevGateItems)
+    {
+        var index = 0;
+
+        foreach (var block in map.GetBlocks().Where(block => IsTransformationGate(block.Name)))
+        {
+            block.Name = prevGateBlocks[index++];
+        }
+
+        index = 0;
+
+        foreach (var item in map.GetAnchoredObjects().Where(item => IsTransformationGate(item.ItemModel.Id)))
+        {
+            item.ItemModel = item.ItemModel with { Id = prevGateItems[index++] };
+        }
     }
 }
